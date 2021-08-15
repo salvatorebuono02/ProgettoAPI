@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
+#include <ctype.h>
 
 #define MAXBUFFER 100
 #define MAXWEIGHT 100
@@ -24,6 +25,8 @@ typedef struct coda{
 coda *returnElem(int );
 
 void changePos(int,int );
+
+void printBestGraph(int k);
 
 int n;
 coda *q=NULL;
@@ -54,16 +57,17 @@ int main() {
         numOfNodes[i]=buffer[i];
     }
     n= myAtoi(numOfNodes);
+    free(numOfNodes);
     printf("Num of nodes are: %d\n",n);
-    for(i++;buffer[i]!='\0';i++){
+    for(i++; isdigit(buffer[i]);i++){
         kgraph[j]=buffer[i];
         j++;
     }
 
     k= myAtoi(kgraph);
-    printf("You want the best %d graphs\n",k);
-    free(numOfNodes);
     free(kgraph);
+    printf("You want the best %d graphs\n",k);
+
     printf("Type AggiungiGrafo\n");
     //gestione di aggiunta grafo
     buffer= fgets(buffer,20,stdin);
@@ -73,9 +77,17 @@ int main() {
             addGraph();
         buffer= fgets(buffer,20,stdin);
     }
-
+    printBestGraph(k);
     free(buffer);
     return 0;
+}
+
+void printBestGraph(int k) {
+    coda *tmp=q;
+    for (int i = 0; i < k; ++i) {
+        printf("%d\t",tmp->index_g);
+        tmp=tmp->next;
+    }
 }
 
 void addGraph(){
@@ -201,10 +213,10 @@ void checkQ() {
 
     int i=num_prog-1;
     printf("NUMPROG %d\n",num_prog);
-    while (i>0 && (returnElem(i/2)->sum_path)<(returnElem(i)->sum_path)){
+    while (i>0 && (returnElem(i/2)->sum_path)>(returnElem(i)->sum_path)){
 
         changePos(i/2,i);
-        printf("Fine change pos");
+        printf("Fine change pos\n");
         i=i/2;
     }
 
@@ -218,14 +230,7 @@ void changePos(int i1,int i2) {
 
     prec1= returnElem(i1-1);
     prec2= returnElem(i2-1);
-    while (prec1->next!=elem1)
-        prec1=prec1->next;
-    while (prec2->next!=elem2)
-        prec2=prec2->next;
-    if(prec1==NULL)
-        q=elem1;
-    else if (prec2==NULL)
-        q=elem2;
+
     if(prec1!=NULL)
         prec1->next=elem2;
     if(prec2!=NULL)
@@ -233,6 +238,10 @@ void changePos(int i1,int i2) {
     tmp=elem1->next;
     elem1->next=elem2->next;
     elem2->next=tmp;
+    if(prec1==NULL)
+        q=elem2;
+    else if (prec2==NULL)
+        q=elem1;
     printf("pos changed\n");
 }
 
