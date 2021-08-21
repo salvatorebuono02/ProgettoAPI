@@ -7,23 +7,23 @@
 #define MAXBUFFER 100000000
 #define MAXWEIGHT 10
 void addGraph();
-void inserisciDistInCoda(unsigned int**);
-unsigned int myAtoi(char*);
-unsigned int minDist(unsigned int *, int *);
+void inserisciDistInCoda(int**);
+int myAtoi(char*);
+int minDist(int *, int *);
 
-void aggiornaCoda(unsigned int );
+void aggiornaCoda(int );
 
 void checkQ();
 
 typedef struct coda{
     int index_g;
-    unsigned int sum_path;
+    int sum_path;
     struct coda *next;
 
 }coda;
 coda* returnElem(int ,coda*);
 
-coda* changePos(int,int ,coda*);
+void changePos(int,int ,coda*);
 
 void printBestGraph(int );
 
@@ -33,7 +33,7 @@ coda *copyList(coda *);
 coda* heapify(coda *, int );
 int size(coda*);
 
-void delete(coda *, coda *);
+coda* delete(coda *, coda *);
 
 //void printList(coda *);
 
@@ -102,7 +102,7 @@ void printBestGraph(int k) { //esegue k volte il cancella-min su q2
         //printf("Size pre delete %d\n", size(q2));
         q2=changePos(0, size(q2)-1,q2);
         //printf("val nuova testa %d\n", returnElem(0,q2)->index_g);
-        delete(returnElem(size(q2) - 1, q2), q2);
+        q2=delete(returnElem(size(q2) - 1, q2), q2);
         //printf("Size post delete %d\n", size(q2));
         q2=heapify(q2, 0);
         if(i<k-1)
@@ -146,12 +146,12 @@ void printList(coda *p) {
 }
  */
 
-void delete(coda *el_del, coda *p){
+coda* delete(coda *el_del, coda *p){
     coda *tmp=p,*prev=NULL;
     if(tmp!=NULL && tmp==el_del){
         p=tmp->next;
         free(tmp);
-        return;
+        return p;
     }
 
     while(tmp!=NULL && tmp!=el_del){
@@ -161,11 +161,12 @@ void delete(coda *el_del, coda *p){
 
     prev->next=tmp->next;
     free(tmp);
+    return p;
 }
 
 
 coda* heapify(coda *pCoda, int i) {
-    int l=(2*i)+1 ;
+    int l=(2*i)+1;
     int r=(2*i)+2;
     int posmin;
     if(l<size(pCoda) && (returnElem(l,pCoda)->sum_path<returnElem(i,pCoda)->sum_path||(returnElem(l,pCoda)->sum_path==returnElem(i,pCoda)->sum_path && returnElem(l,pCoda)->index_g <
@@ -212,16 +213,16 @@ coda *copyList(coda *h) {
 
 
 void addGraph(){
-    unsigned int **g;
+    int **g;
     char w[MAXWEIGHT]="0";
     int col;
 
 
-    g=(unsigned int **) malloc(sizeof(unsigned int*)*n);
+    g=(int **) malloc(sizeof(int*)*n);
     for(int i=0;i<n;i++){
         col=0;
         int j=0;
-        g[i]= malloc(sizeof (unsigned int)*n);
+        g[i]= malloc(sizeof (int)*n);
         buffer=fgets(buffer,MAXBUFFER,stdin);
         //printf("ROW: %ld\n",strlen(buffer));
         //isolo il peso
@@ -262,9 +263,9 @@ void addGraph(){
     free(g);
 }
 
-unsigned int myAtoi(char* s)
+int myAtoi(char* s)
 {
-    unsigned int res = 0;
+    int res = 0;
 
 
     for (int i = 0; s[i] != '\0'; ++i)
@@ -273,35 +274,35 @@ unsigned int myAtoi(char* s)
     return res;
 }
 
-void inserisciDistInCoda(unsigned int **g){
+void inserisciDistInCoda(int **g){
 
-    unsigned int *dist;
+    int *dist;
     int *spSet; //insieme dei nodi visitati
 
-    dist= malloc(sizeof (unsigned int)*n);
+    dist= malloc(sizeof (int)*n);
     spSet= malloc(sizeof (int )*n);
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
             if(i==j)
                 g[i][j]=0;
         }
-        dist[i]=UINT_MAX,spSet[i]=0;
+        dist[i]=INT_MAX,spSet[i]=0;
     }
     dist[0]=0;
 
     for (int i = 0; i < n-1; ++i) {
-        unsigned int minv=minDist(dist,spSet);
+        int minv=minDist(dist,spSet);
 
         spSet[minv]=1;
         for (int j = 0; j < n; ++j) {
-            if(spSet[j]==0 && g[minv][j]>0 && dist[minv]!=UINT_MAX && dist[minv]+g[minv][j]<dist[j])
+            if(spSet[j]==0 && g[minv][j]>0 && dist[minv]!=INT_MAX && dist[minv]+g[minv][j]<dist[j])
                 dist[j]=dist[minv]+g[minv][j];
         }
 
     }
-    unsigned int distfrom0=0;
+    int distfrom0=0;
     for (int i = 0; i < n; ++i) {
-        if(dist[i]!=UINT_MAX)
+        if(dist[i]!=INT_MAX)
             distfrom0+=dist[i];
     }
     free(dist);
@@ -310,8 +311,8 @@ void inserisciDistInCoda(unsigned int **g){
     aggiornaCoda(distfrom0);
 }
 
-unsigned int minDist(unsigned int *dist, int *spSet) {
-    unsigned int min=UINT_MAX, i_min=0;
+int minDist(int *dist, int *spSet) {
+    int min=UINT_MAX, i_min=0;
     for (int i = 0; i < n; ++i) {
         if(dist[i]<=min && spSet[i]==0)
             min=dist[i],i_min=i;
@@ -319,7 +320,7 @@ unsigned int minDist(unsigned int *dist, int *spSet) {
     return i_min;
 }
 
-void aggiornaCoda(unsigned int distfrom0) { //inserisci in coda
+void aggiornaCoda(int distfrom0) { //inserisci in coda
     coda *last;
     coda* new_elem= malloc(sizeof(coda));
     new_elem->sum_path=distfrom0;
@@ -356,7 +357,7 @@ void checkQ() {
 
 }
 
-coda* changePos(int i1,int i2,coda *q1) {
+void changePos(int i1,int i2,coda *q1) {
     coda *tmp;
     coda *elem1= returnElem(i1,q1);
     coda *elem2= returnElem(i2,q1);
@@ -378,7 +379,6 @@ coda* changePos(int i1,int i2,coda *q1) {
     else if (prec2==NULL)
         q1=elem1;
     //printf("pos changed\n");
-    return q1;
 }
 
 coda* returnElem(int index,coda*q1){
@@ -394,8 +394,8 @@ coda* returnElem(int index,coda*q1){
     }
 
 }
- int size(coda* w){
-    unsigned int c=0;
+int size(coda* w){
+    int c=0;
     coda *tmp=w;
     while (tmp!=NULL){
         c++;
