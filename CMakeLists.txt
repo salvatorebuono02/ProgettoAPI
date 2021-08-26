@@ -3,4 +3,4 @@ project(ProgettoAPI C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(ProgettoAPI main.c provaconArray.c)
+add_executable(ProgettoAPI provaconArray.c)

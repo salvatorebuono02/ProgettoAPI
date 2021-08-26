@@ -7,7 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAXBUFFER 100000000
+#define MAXBUFFER 10000000
 #define MAXWEIGHT 10
 
 typedef struct heap{
@@ -16,16 +16,20 @@ typedef struct heap{
 }heap;
 
 int heap_size=0;
-heap* coda;
+heap* q_priority;
+int num_prog=0;
 
 void swap(heap *first, heap *second);
 
-int cancella_min(heap *h);
+void cancella_max();
 
-void min_heapify(heap *pHeap, int i,int size);
+void max_heapify(int i);
+
+void inserisci_elem(int distfrom0);
 
 int minDist(int *dist, int *spSet, int n) {
-    int min=INT_MAX, i_min=0;
+    int min=INT_MAX;
+    int i_min=0;
     for (int i = 0; i < n; ++i) {
         if(dist[i]<=min && spSet[i]==0)
             min=dist[i],i_min=i;
@@ -44,29 +48,32 @@ int myAtoi(char* s)
     return res;
 }
 
-void aggiornaCoda(int distfrom0) {
+void aggiornaCoda(int distfrom0,int k) {
+    if(heap_size<k){
 
-    if(heap_size == 0){
-        coda= malloc(sizeof(heap));
-        coda[heap_size].sum_path=distfrom0;
-        coda[heap_size].index=heap_size;
-        heap_size++;
+        inserisci_elem(distfrom0);
     }
     else{
-        printf("riga51\n");
-        coda= realloc(coda, sizeof(heap)*(heap_size + 1));
-        coda[heap_size].index=heap_size;
-        coda[heap_size].sum_path=distfrom0;
-        int i=heap_size;
-        while (i>0 && (coda[(i-1)/2].sum_path>coda[i].sum_path || (coda[(i-1)/2].sum_path==coda[i].sum_path && coda[(i-1)/2].index>coda[i].index))){
-            swap(&coda[(i-1)/2],&coda[i]);
-            i=(i-1)/2;
-        }
-        for (int j = 0; j <=heap_size; ++j) {
-            printf("Index:%d Sum:%d\n",coda[j].index,coda[j].sum_path);
-        }
-        heap_size++;
+        if(distfrom0<q_priority[0].sum_path){
+            //cancella max
+            cancella_max();
+            //metto l'ultimo elemento in coda
+            inserisci_elem(distfrom0);
 
+        }
+    }
+    //printf("HEAPSIZE:%d",heap_size);
+}
+
+void inserisci_elem(int distfrom0) {
+    heap_size++;
+    q_priority= realloc(q_priority,sizeof(heap)*heap_size);
+    q_priority[heap_size-1].sum_path=distfrom0;
+    q_priority[heap_size-1].index=num_prog;
+    int i=heap_size-1;
+    while(i>0 && (q_priority[(i-1)/2].sum_path<q_priority[i].sum_path ||(q_priority[(i-1)/2].sum_path==q_priority[i].sum_path &&q_priority[(i-1)/2].index<q_priority[i].index))){
+        swap(&q_priority[(i-1)/2],&q_priority[i]);
+        i=(i-1)/2;
     }
 }
 
@@ -83,7 +90,7 @@ void swap(heap *first, heap *second) {
     free(tmp);
 }
 
-void inserisciDistInCoda(int **g, int n){
+int calcDistFrom0(int **g, int n){
 
     int *dist;
     int *spSet; //insieme dei nodi visitati
@@ -116,12 +123,12 @@ void inserisciDistInCoda(int **g, int n){
     }
     free(dist);
     free(spSet);
-    printf("Tot dist %d\n",distfrom0);
-    aggiornaCoda(distfrom0);
+    //printf("Tot dist %d\n",distfrom0);
+    return distfrom0;
 }
 
 
-void addGraph(char *buffer,int n){
+int addGraph(char *buffer,int n){
     int **g;
     char w[MAXWEIGHT]="0";
     int col,j;
@@ -157,41 +164,51 @@ void addGraph(char *buffer,int n){
         }
 
     }
-    inserisciDistInCoda(g,n);
+    int a= calcDistFrom0(g, n);
     for (int i = 0; i < n; ++i) {
         free(g[i]);
     }
     free(g);
+    return a;
+
 }
 
 
 void printBestGraph(int k) {
-    heap *copia_coda=malloc(sizeof(heap)*(heap_size));
-    for (int i = 0; i < heap_size; ++i) {
-        copia_coda[i]=coda[i];
+    if(heap_size==0){
+        printf("\n");
     }
-    for (int i = 0; i < k; ++i) {
-        if(i<k-1)
-            printf("%d ",cancella_min(copia_coda));
-        else
-            printf("%d\n",cancella_min(copia_coda));
+    else{
+        for (int i = 0; i < heap_size-1; ++i) {
+            printf("%d ",q_priority[i].index);
+        }
+
+        printf("%d\n",q_priority[heap_size-1].index);
     }
-    free(copia_coda);
+
 }
 
-int cancella_min(heap *h) {
+void cancella_max() {
 
-    if(aux_size<1)
-        return -1;
-    int min=h[0].sum_path;
-    h[0]=h[aux_size-1];
-    aux_size--;//auaxsize viene ripristinata ad ogni ciclo di k
-    min_heapify(h,0,aux_size);
-    return min;
+    q_priority[0]=q_priority[heap_size-1];
+    heap_size--;
+    q_priority= realloc(q_priority,sizeof (heap)*(heap_size));
+    max_heapify(0);
 }
 
-void min_heapify(heap *pHeap, int i,int size) {
+void max_heapify(int i) {
+    int max=i;
+    int l=2*i +1;
+    int r=2*i +2;
 
+    if(l<heap_size && (q_priority[l].sum_path>q_priority[max].sum_path ||(q_priority[l].sum_path==q_priority[max].sum_path && q_priority[l].index>q_priority[max].index)))
+        max=l;
+    if(r<heap_size && (q_priority[r].sum_path>q_priority[max].sum_path ||(q_priority[r].sum_path==q_priority[max].sum_path && q_priority[r].index>q_priority[max].index)))
+        max=r;
+    if(max!=i){
+        swap(&q_priority[i],&q_priority[max]);
+        max_heapify(max);
+    }
 }
 
 int main() {
@@ -212,7 +229,7 @@ int main() {
         return -1;
     }
     kgraph=(char *) calloc(MAXBUFFER/2,sizeof(char ));
-    buffer=fgets(buffer,10,stdin);
+    buffer=fgets(buffer,MAXBUFFER,stdin);
 
     for(i=0;buffer[i]!=' ';i++){
         if(buffer[i]=='\0')
@@ -226,28 +243,30 @@ int main() {
         kgraph[j]=buffer[i];
         j++;
     }
-
+    q_priority= malloc(sizeof(heap));
     k= myAtoi(kgraph);
     free(kgraph);
     //printf("You want the best %d graphs\n",k);
 
     //printf("Type AggiungiGrafo\n");
     //gestione di aggiunta grafo
-    buffer= fgets(buffer,20,stdin);
-    while(buffer != NULL){
+    buffer= fgets(buffer,MAXBUFFER,stdin);
+    while(buffer!=NULL){
 
         if(strncmp("AggiungiGrafo",buffer,13)==0){
             //printf("hai scelto aggiungiGrafo\n");
-            addGraph(buffer,n);
+            int a=addGraph(buffer,n);
+            aggiornaCoda(a,k);
+            num_prog++;
         }
 
-        else if(strncmp("TopK",buffer,4)!=0){
+        else if(strncmp("TopK",buffer,4)==0){
             //printf("Hai scelto topk\n");
             printBestGraph(k);
         }
-        buffer= fgets(buffer,20,stdin);
+        buffer= fgets(buffer,MAXBUFFER,stdin);
     }
-
+    free(q_priority);
     free(buffer);
     return 0;
 }
