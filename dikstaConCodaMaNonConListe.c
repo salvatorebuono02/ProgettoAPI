@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
-#include <ctype.h>
 
 #define MAXBUFFER 10000000
 #define MAXWEIGHT 10
@@ -29,7 +28,7 @@ int num_prog=0;
 void cancella_max();
 
 void max_heapify(int i);
-void printHeap(heap*);
+//void printHeap(heap*);
 
 void createHeap(heap *pMin, int n);
 
@@ -202,7 +201,6 @@ int addGraph(char *buffer,int n){
         j=0;
         g[i]= malloc(sizeof (int)*n);
         buffer=fgets(buffer,MAXBUFFER,stdin);
-        //printf("ROW: %ld\n",strlen(buffer));
         //isolo il peso
 
         for (int k = 0;buffer[k]!='\n' ; k++) {
@@ -314,7 +312,7 @@ int main() {
     n= myAtoi(numOfNodes);
     free(numOfNodes);
     //printf("Num of nodes are: %d\n",n);
-    for(i++; isdigit(buffer[i]);i++){
+    for(i++; buffer[i]!='\n';i++){
         kgraph[j]=buffer[i];
         j++;
     }
@@ -346,9 +344,10 @@ int main() {
     free(buffer);
     return 0;
 }
-
+/*
 void printHeap(heap *heap1){
     printf("\nHEAP\n");
     for(int i=0;i<heap1->size;i++)
         printf("Array[%d]: %d, info: %d\n",i,heap1->array[i].dist,heap1->array[i].info);
 }
+*/
