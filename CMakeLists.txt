@@ -3,4 +3,4 @@ project(ProgettoAPI C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(ProgettoAPI dikstaConCodaMaNonConListe.c)
+add_executable(ProgettoAPI progettoAPI.c)

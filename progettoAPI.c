@@ -4,9 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
-#include <string.h>
 
-#define MAXBUFFER 10000000
+#define MAXBUFFER 100000
 #define MAXWEIGHT 10
 
 
@@ -28,13 +27,15 @@ int num_prog=0;
 void cancella_max();
 
 void max_heapify(int i);
-//void printHeap(heap*);
+void printHeap(heap*);
 
 void createHeap(heap *pMin, int n);
 
-void accoda(heap *pMin, int i, int dist);
+void accoda(heap *pMin, int i, int dist,int*pos);
 void accodaInHeap(heap*,int,int);
-void removeMin(heap *pMin);
+void removeMin(heap *pMin, int *pInt);
+
+void decrementaPri(heap *minHeap, int v, int dist, int *pos);
 
 int myAtoi(char* s)
 {
@@ -76,7 +77,7 @@ void accodaInHeap(heap* h,int i,int dist){
 }
 
 
-void minHeapify(heap* minHeap, int i){
+void minHeapify(heap *minHeap, int i, int *pos) {
     int min,l,r;
     heap_elem tmp;
     l=(2*i)+1;
@@ -88,18 +89,23 @@ void minHeapify(heap* minHeap, int i){
     if(r<minHeap->size && minHeap->array[r].dist<minHeap->array[min].dist)
         min=r;
     if(min!=i){
-        tmp=minHeap->array[i];
-        minHeap->array[i]=minHeap->array[min];
+        heap_elem smallest=minHeap->array[min];
+        heap_elem i_node=minHeap->array[i];
+        pos[smallest.info]=i;
+        pos[i_node.info]=min;
+        tmp=i_node;
+        minHeap->array[i]=smallest;
         minHeap->array[min]=tmp;
-        minHeapify(minHeap,min);
+        minHeapify(minHeap, min, pos);
     }
 }
 
 int calcDistFrom0(int **g, int n){
-    int*a=(int*) malloc(n* sizeof(int));
+    int *dist=(int*) malloc(n * sizeof(int));
+    int *pos=(int*) malloc(n * sizeof(int));
     heap *Q=(heap*) malloc(sizeof(heap));
-    int ndis;
-    heap_elem u;
+
+
     createHeap(Q,n);
     int distfrom0=0;
     for (int i = 0; i < n; ++i) {
@@ -107,56 +113,49 @@ int calcDistFrom0(int **g, int n){
         e.info=i;
         if(i==0){
             e.dist=0;
-            a[i]=0;
+            dist[i]=0;
         }
         else{
             e.dist=INT_MAX;
-            a[i]=INT_MAX;
+            dist[i]=INT_MAX;
         }
-        accoda(Q,i,e.dist);
+        pos[i]=i;
+        accoda(Q,i,e.dist,pos);
         //printf("Q->SIZE: %d\n",Q->size);
     }
     while (Q->size>0){
         //printf("\nWHILE\n");
         //printf("size:%d\n",Q->size);
+        //printf("\nPOS\n");
+
         //printHeap(Q);
-        u=Q->array[0];
-        if(u.dist==INT_MAX)
+        int u=Q->array[0].info;
+        if(dist[u]==INT_MAX)
             return distfrom0;
-        distfrom0=distfrom0+u.dist;
+        distfrom0=distfrom0+dist[u];
         //printf("Distfrom0: %d\n",distfrom0);
-        removeMin(Q);
+        removeMin(Q, pos);
         for (int i = 0; i < n; ++i) {
-            if(g[u.info][i]!=0 && i!=u.info && i!=0 ){
-                ndis=u.dist+g[u.info][i];
+            if(g[u][i]!=0 && i!=u && i!=0 && pos[i]<Q->size){
+                int ndis=dist[u]+g[u][i];
                 //printf("nids: %d\n",ndis);
-                //printf("a[%d]=%d\n",i,a[i]);
-                if(a[i]>ndis){
-                    //mi vado a trovare l'elemento corrispondente nell'array all'indice selezionato
-                    int j = 0;
-                    for (; j < Q->size && Q->array[j].info!=i; ++j);
-                    if(Q->array[j].info==i){
-                        //aggiorno i valori
-                        Q->array[j].dist=ndis;
-                        a[i]=ndis;
-                        //printf("AGGIORNO a[%d]=%d\n",i,a[i]);
-                        //dal penultimo livello a salire, sistemo gli elementi secondo un heap
-                        for(int m=(Q->size-1)/2;m>=0;m--){
-                            minHeapify(Q,m);
-                        }
-                    }
+                //printf("dist[%d]=%d\n",i,dist[i]);
+                if(dist[i]>ndis){
+                    dist[i]=ndis;
+                    decrementaPri(Q,i,dist[i],pos);
                 }
             }
         }
     }
-    free(a);
+
+    free(dist);
     free(Q->array);
+    free(Q);
+    free(pos);
     //printf("Distfrom0 %d: \n",distfrom0);
     return distfrom0;
 }
-
-
-void accoda(heap *pMin, int i, int dist){
+void accoda(heap *pMin, int i, int dist,int* pos){
     heap_elem tmp;
     if(pMin->size<pMin->capacity){
 
@@ -165,6 +164,8 @@ void accoda(heap *pMin, int i, int dist){
 
         int k=pMin->size;
         while(k>0 && pMin->array[(k-1)/2].dist>pMin->array[k].dist){
+            pos[pMin->array[k].info]=(k-1)/2;
+            pos[pMin->array[(k-1)/2].info]=k;
             tmp=pMin->array[(k-1)/2];
             pMin->array[(k-1)/2]=pMin->array[k];
             pMin->array[k]=tmp;
@@ -174,18 +175,38 @@ void accoda(heap *pMin, int i, int dist){
     }
 }
 
+void decrementaPri(heap *minHeap, int v, int dist, int *pos) {
+    int i=pos[v];
+    heap_elem tmp;
+    minHeap->array[i].dist=dist;
+    while(i>0 && minHeap->array[i].dist<minHeap->array[(i-1)/2].dist ){
+        pos[minHeap->array[i].info]=(i-1)/2;
+        pos[minHeap->array[(i-1)/2].info]=i;
+        tmp=minHeap->array[(i-1)/2];
+        minHeap->array[(i-1)/2]=minHeap->array[i];
+        minHeap->array[i]=tmp;
+        i=(i-1)/2;
+    }
+
+}
 
 
-void removeMin(heap *pMin) {
-    pMin->array[0]=pMin->array[(pMin->size)-1];
+
+
+void removeMin(heap *pMin, int *pInt) {
+    heap_elem root=pMin->array[0];
+    heap_elem last=pMin->array[pMin->size -1];
+    pMin->array[0]=last;
+    pInt[root.info]=pMin->size-1;
+    pInt[last.info]=0;
     pMin->size--;
-    minHeapify(pMin,0);
+    minHeapify(pMin, 0, pInt);
 }
 
 void createHeap(heap *pMin, int n) {
     pMin->size=0;
     pMin->capacity=n;
-    pMin->array=(heap_elem*) malloc(sizeof(heap_elem) * n);
+    pMin->array=(heap_elem*) calloc(n,sizeof(heap_elem));
 }
 
 
@@ -298,20 +319,18 @@ int main() {
     //lettura prima riga
     buffer=(char *) malloc(sizeof(char )*MAXBUFFER);
     numOfNodes=(char *) calloc(MAXBUFFER/2,sizeof (char ));
-    if(!numOfNodes){
-        return -1;
-    }
-    kgraph=(char *) calloc(MAXBUFFER/2,sizeof(char ));
+
     buffer=fgets(buffer,MAXBUFFER,stdin);
 
     for(i=0;buffer[i]!=' ';i++){
-        if(buffer[i]=='\0')
-            break;
+        if(buffer[i]=='\n')
+            return 0;
         numOfNodes[i]=buffer[i];
     }
     n= myAtoi(numOfNodes);
     free(numOfNodes);
     //printf("Num of nodes are: %d\n",n);
+    kgraph=(char *) calloc(MAXBUFFER/2,sizeof(char ));
     for(i++; buffer[i]!='\n';i++){
         kgraph[j]=buffer[i];
         j++;
@@ -327,27 +346,27 @@ int main() {
     buffer= fgets(buffer,MAXBUFFER,stdin);
     while(buffer!=NULL){
 
-        if(strncmp("AggiungiGrafo",buffer,13)==0){
+        if(buffer[0]=='A'){
             //printf("hai scelto aggiungiGrafo\n");
             int a=addGraph(buffer,n);
             aggiornaCoda(a);
             num_prog++;
         }
 
-        else if(strncmp("TopK",buffer,4)==0){
+        else if(buffer[0]=='T'){
             //printf("Hai scelto topk\n");
             printBestGraph();
         }
         buffer= fgets(buffer,MAXBUFFER,stdin);
     }
     free(q_priority->array);
+    free(q_priority);
     free(buffer);
     return 0;
 }
-/*
+
 void printHeap(heap *heap1){
     printf("\nHEAP\n");
     for(int i=0;i<heap1->size;i++)
         printf("Array[%d]: %d, info: %d\n",i,heap1->array[i].dist,heap1->array[i].info);
 }
-*/
