@@ -8,6 +8,9 @@ It is realized with:
 2. No external library beyond the standard C library
 3. No multithreading
 
-You can find the assignement in "Presentazione.pdf" file.
+You can find the assignement in *Presentazione.pdf* file.
 The project must be executed in a Linux environment compiling it in the terminal:
 >$gcc -Wall -Werror -O2 -g3 ProgettoAPI.c -o graphRanker
+
+
+It has reached the maximum score during the exam:  **30/30**
