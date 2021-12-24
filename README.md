@@ -9,3 +9,5 @@ It is realized with:
 3. No multithreading
 
 You can find the assignement in "Presentazione.pdf" file.
+The project must be executed in a Linux environment compiling it in the terminal:
+>$gcc -Wall -Werror -O2 -g3 ProgettoAPI.c -o graphRanker
